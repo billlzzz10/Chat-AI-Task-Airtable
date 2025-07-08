@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการงานและ AI ช่วยเหลือ</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.3/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <style>
+        .glass { backdrop-filter: blur(10px); background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .dark .glass { background-color: rgba(30, 30, 30, 0.3); }
+        .btn-3d { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.2s; }
+        .btn-3d:active { transform: translateY(0); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1); }
+        .chart-container { height: 200px; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200 min-h-screen transition-colors duration-300">
+    <div x-data="app()" x-cloak>
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" class="fixed top-0 left-0 z-50 w-64 h-screen glass transition-transform duration-300 lg:translate-x-0 transform">
+            <div class="flex flex-col h-full">
+                <div class="p-4 border-b border-white/10 flex items-center">
+                    <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full mr-3">
+                    <div>
+                        <h1 class="font-bold">ระบบจัดการงาน AI</h1>
+                        <p class="text-xs opacity-70">พร้อมผู้ช่วย AI</p>
+                    </div>
+                </div>
+
+                <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                    <template x-for="item in navItems" :key="item.id">
+                        <button @click="currentView = item.id; sidebarOpen = false"
+                                :class="currentView === item.id ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-blue-600/10'"
+                                class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center">
+                            <i :class="item.icon" class="w-6 text-center mr-3"></i>
+                            <span x-text="item.label"></span>
+                        </button>
+                    </template>
+                </nav>
+
+                <div class="p-4 border-t border-white/10">
+                    <button @click="currentView = 'settings'; sidebarOpen = false" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-600/10 transition-colors flex items-center">
+                        <i class="fas fa-cog w-6 text-center mr-3"></i>
+                        <span>ตั้งค่า</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="lg:pl-64 flex flex-col min-h-screen">
+            <header class="sticky top-0 z-40 glass p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg hover:bg-blue-600/10">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h2 class="text-xl font-bold" x-text="getCurrentViewTitle()"></h2>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="https://airtable.com/appXXXXXXXXXXXXXX" target="_blank" class="btn-3d bg-green-600 text-white px-3 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-table mr-1"></i>
+                        <span class="hidden sm:inline">Airtable</span>
+                    </a>
+                    <button @click="toggleDarkMode()" class="btn-3d bg-gray-700 dark:bg-gray-600 text-white p-2.5 rounded-lg">
+                        <i :class="isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon'"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 p-6 space-y-6">
+                <!-- AI Chat View -->
+                <div x-show="currentView === 'ai_chat'" class="h-[calc(100vh-10rem)] flex flex-col">
+                    <div class="flex-1 glass rounded-xl p-4 overflow-y-auto space-y-4" id="chat-container">
+                        <template x-for="message in chatMessages" :key="message.id">
+                            <div class="flex" :class="message.sender === 'user' ? 'justify-end' : 'justify-start'">
+                                <div class="max-w-md p-3 rounded-lg" :class="message.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-white/20 dark:bg-gray-700/40'">
+                                    <p x-html="formatMessage(message.text)"></p>
+                                    <p class="text-xs mt-1 opacity-70" x-text="formatTime(message.timestamp)"></p>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="isLoading" class="flex justify-start">
+                            <div class="max-w-md p-3 rounded-lg bg-white/20 dark:bg-gray-700/40 flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                                <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                                <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <form @submit.prevent="sendMessage()" class="relative">
+                            <input type="text" x-model="newMessage" placeholder="พิมพ์ข้อความหรือคำสั่ง..."
+                                   class="w-full pl-4 pr-12 py-3 rounded-lg bg-white/10 dark:bg-gray-700/30 border-2 border-transparent focus:border-blue-600 focus:ring-0 transition">
+                            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-blue-600 text-white hover:bg-opacity-80">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Forms View -->
+                <div x-show="currentView === 'forms'" class="space-y-6">
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="font-semibold text-lg mb-4 flex items-center">
+                            <i class="fas fa-tasks mr-3 text-blue-600"></i>เพิ่มงานใหม่
+                        </h3>
+                        <form @submit.prevent="submitTask()" class="space-y-3">
+                            <input type="text" x-model="taskForm.title" placeholder="ชื่องาน" required 
+                                   class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
+                            <textarea x-model="taskForm.description" placeholder="รายละเอียด" 
+                                      class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2" rows="2"></textarea>
+                            <div class="grid grid-cols-2 gap-3">
+                                <select x-model="taskForm.priority" class="bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
+                                    <option value="">-- ความสำคัญ --</option>
+                                    <option value="High">สำคัญมาก</option>
+                                    <option value="Medium">สำคัญปานกลาง</option>
+                                    <option value="Low">สำคัญน้อย</option>
+                                </select>
+                                <input type="date" x-model="taskForm.dueDate" class="bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
+                            </div>
+                            <button type="submit" class="btn-3d bg-blue-600 text-white w-full py-2 rounded-lg">บันทึกงาน</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div x-show="currentView === 'settings'" class="space-y-6">
+                    <div class="glass rounded-xl p-6">
+                        <h3 class="font-semibold text-lg mb-4">ตั้งค่าการเชื่อมต่อ API</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block mb-1">Airtable API Key</label>
+                                <input type="password" x-model="settings.airtableKey" placeholder="patXXXXXXXXXXXXXX" 
+                                       class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
+                            </div>
+                            <div>
+                                <label class="block mb-1">Airtable Base ID</label>
+                                <input type="text" x-model="settings.airtableBase" placeholder="appXXXXXXXXXXXXXX" 
+                                       class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
+                            </div>
+                            <div>
+                                <label class="block mb-1">Google API Key (Gemini)</label>
+                                <input type="password" x-model="settings.googleKey" placeholder="AIZXXXXXXXXXXXXXXX" 
+                                       class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
+                            </div>
+                            <button @click="saveSettings()" class="btn-3d bg-blue-600 text-white px-4 py-2 rounded-lg">บันทึกการตั้งค่า</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function app() {
+            return {
+                sidebarOpen: false,
+                isDark: localStorage.getItem('darkMode') === 'true',
+                currentView: 'ai_chat',
+                isLoading: false,
+                chatMessages: [],
+                newMessage: '',
+                taskForm: {
+                    title: '',
+                    description: '',
+                    priority: '',
+                    dueDate: ''
+                },
+                settings: {
+                    airtableKey: localStorage.getItem('airtableKey') || '',
+                    airtableBase: localStorage.getItem('airtableBase') || '',
+                    googleKey: localStorage.getItem('googleKey') || ''
+                },
+                navItems: [
+                    { id: 'ai_chat', label: 'AI ผู้ช่วย', icon: 'fas fa-robot' },
+                    { id: 'forms', label: 'เพิ่มข้อมูล', icon: 'fas fa-plus-circle' },
+                ],
+                init() {
+                    this.loadMessages();
+                    if (this.isDark) {
+                        document.documentElement.classList.add('dark');
+                    }
+                },
+                getCurrentViewTitle() {
+                    const current = this.navItems.find(item => item.id === this.currentView);
+                    return current ? current.label : 'ตั้งค่า';
+                },
+                toggleDarkMode() {
+                    this.isDark = !this.isDark;
+                    localStorage.setItem('darkMode', this.isDark);
+                    document.documentElement.classList.toggle('dark');
+                },
+                formatTime(timestamp) {
+                    return new Date(timestamp).toLocaleTimeString();
+                },
+                formatMessage(text) {
+                    return text.replace(/\n/g, '<br>');
+                },
+                loadMessages() {
+                    const saved = localStorage.getItem('chatMessages');
+                    if (saved) {
+                        this.chatMessages = JSON.parse(saved);
+                    } else {
+                        // Add welcome message
+                        this.chatMessages = [{
+                            id: Date.now(),
+                            sender: 'assistant',
+                            text: 'สวัสดี! ฉันเป็น AI ผู้ช่วยของคุณ สามารถถามอะไรก็ได้หรือสั่งให้ฉันสร้างงานใหม่ เช่น "สร้างงานใหม่: อัพเดทเว็บไซต์ ภายในวันพรุ่งนี้"',
+                            timestamp: Date.now()
+                        }];
+                        localStorage.setItem('chatMessages', JSON.stringify(this.chatMessages));
+                    }
+                    this.scrollToBottom();
+                },
+                scrollToBottom() {
+                    setTimeout(() => {
+                        const container = document.getElementById('chat-container');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    }, 100);
+                },
+                async sendMessage() {
+                    if (!this.newMessage.trim()) return;
+                    
+                    // Add user message
+                    const userMessage = {
+                        id: Date.now(),
+                        sender: 'user',
+                        text: this.newMessage,
+                        timestamp: Date.now()
+                    };
+                    this.chatMessages.push(userMessage);
+                    localStorage.setItem('chatMessages', JSON.stringify(this.chatMessages));
+                    this.scrollToBottom();
+                    
+                    const userInput = this.newMessage;
+                    this.newMessage = '';
+                    this.isLoading = true;
+                    
+                    try {
+                        // Handle task creation command
+                        if (userInput.toLowerCase().includes('สร้างงาน') || userInput.toLowerCase().includes('create task')) {
+                            await this.processTaskCreation(userInput);
+                        } else {
+                            await this.processWithGemini(userInput);
+                        }
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                        this.addAssistantMessage('ขออภัย เกิดข้อผิดพลาดในการประมวลผล กรุณาลองอีกครั้ง');
+                    }
+                    
+                    this.isLoading = false;
+                    this.scrollToBottom();
+                },
+                addAssistantMessage(text) {
+                    const assistantMessage = {
+                        id: Date.now(),
+                        sender: 'assistant',
+                        text: text,
+                        timestamp: Date.now()
+                    };
+                    this.chatMessages.push(assistantMessage);
+                    localStorage.setItem('chatMessages', JSON.stringify(this.chatMessages));
+                },
+                async processTaskCreation(input) {
+                    // Simulate task creation
+                    const taskTitle = input.replace(/สร้างงาน|create task/i, '').trim().split(':').pop().trim();
+                    
+                    // Use Airtable API if credentials are set
+                    if (this.settings.airtableKey && this.settings.airtableBase) {
+                        try {
+                            const response = await fetch(`https://api.airtable.com/v0/${this.settings.airtableBase}/Tasks`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${this.settings.airtableKey}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    fields: {
+                                        Name: taskTitle,
+                                        Status: 'Todo',
+                                        Priority: 'Medium'
+                                    }
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                this.addAssistantMessage(`✅ สร้างงาน "${taskTitle}" เรียบร้อยแล้ว`);
+                            } else {
+                                throw new Error('Airtable API error');
+                            }
+                        } catch (error) {
+                            console.error('Airtable error:', error);
+                            this.addAssistantMessage(`⚠️ ไม่สามารถบันทึกงานใน Airtable ได้: ${error.message}`);
+                        }
+                    } else {
+                        // Fallback to local simulation
+                        setTimeout(() => {
+                            this.addAssistantMessage(`✅ สร้างงาน "${taskTitle}" เรียบร้อยแล้ว (โหมดจำลอง - กรุณาตั้งค่า Airtable API)`);
+                        }, 1000);
+                    }
+                },
+                async processWithGemini(input) {
+                    if (this.settings.googleKey) {
+                        try {
+                            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.settings.googleKey}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    contents: [{
+                                        parts: [{
+                                            text: input
+                                        }]
+                                    }]
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                const aiResponse = data.candidates[0].content.parts[0].text;
+                                this.addAssistantMessage(aiResponse);
+                            } else {
+                                throw new Error('Gemini API error');
+                            }
+                        } catch (error) {
+                            console.error('Gemini error:', error);
+                            this.addAssistantMessage('ขออภัย ไม่สามารถเชื่อมต่อกับ Gemini API ได้ กรุณาตรวจสอบ API key');
+                        }
+                    } else {
+                        // Fallback response
+                        setTimeout(() => {
+                            this.addAssistantMessage('กรุณาตั้งค่า Google API Key (Gemini) ในหน้าตั้งค่าเพื่อใช้งาน AI');
+                        }, 1000);
+                    }
+                },
+                async submitTask() {
+                    if (!this.taskForm.title) return;
+                    
+                    if (this.settings.airtableKey && this.settings.airtableBase) {
+                        try {
+                            const response = await fetch(`https://api.airtable.com/v0/${this.settings.airtableBase}/Tasks`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${this.settings.airtableKey}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    fields: {
+                                        Name: this.taskForm.title,
+                                        Description: this.taskForm.description,
+                                        Status: 'Todo',
+                                        Priority: this.taskForm.priority || 'Medium',
+                                        'Due Date': this.taskForm.dueDate || null
+                                    }
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                alert('บันทึกงานเรียบร้อยแล้ว');
+                                this.taskForm = { title: '', description: '', priority: '', dueDate: '' };
+                            } else {
+                                throw new Error('Airtable API error');
+                            }
+                        } catch (error) {
+                            console.error('Airtable error:', error);
+                            alert(`ไม่สามารถบันทึกงานได้: ${error.message}`);
+                        }
+                    } else {
+                        alert('กรุณาตั้งค่า Airtable API Key และ Base ID ก่อน');
+                    }
+                },
+                saveSettings() {
+                    localStorage.setItem('airtableKey', this.settings.airtableKey);
+                    localStorage.setItem('airtableBase', this.settings.airtableBase);
+                    localStorage.setItem('googleKey', this.settings.googleKey);
+                    alert('บันทึกการตั้งค่าเรียบร้อยแล้ว');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
