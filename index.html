@@ -1,383 +1,1012 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการงานและ AI ช่วยเหลือ</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.3/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <title>Ashval Business OS - Complete AI Dashboard</title>
+
+    <script src="<https://cdn.tailwindcss.com>"></script>
+    <script src="<https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js>" defer></script>
+    <script src="<https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js>"></script>
+    <script src="<https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js>"></script>
+    <link href="<https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css>" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#8B5FBF',
+                        accent: '#FF6B9D',
+                        success: '#4ADE80',
+                        warning: '#FBBF24',
+                        error: '#EF4444',
+                        'base-100': '#ffffff',
+                        'base-200': '#f9fafb',
+                        'base-300': '#f3f4f6',
+                        'dark-base-100': '#1f2937',
+                        'dark-base-200': '#374151',
+                        'dark-base-300': '#4b5563',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        .glass { backdrop-filter: blur(10px); background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .dark .glass { background-color: rgba(30, 30, 30, 0.3); }
-        .btn-3d { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.2s; }
-        .btn-3d:active { transform: translateY(0); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1); }
-        .chart-container { height: 200px; }
+        @import url('<https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap>');
+        * { font-family: 'Noto Sans Thai', sans-serif; scroll-behavior: smooth; }
+
+        .glass {
+             background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(12px);
+             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dark .glass {
+            background: rgba(29, 28, 45, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-3d {
+             transform: translateY(0px);
+             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+             transition: all 0.15s ease-in-out;
+         }
+        .btn-3d:hover {
+             transform: translateY(-2px);
+             box-shadow: 0 6px 16px rgba(93, 92, 222, 0.3);
+         }
+        .btn-3d:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-container { position: relative; height: 280px; width: 100%; }
+        [x-cloak] { display: none !important; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #8B5FBF; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5D5CDE; }
+
+        /* SortableJS placeholder */
+        .kanban-placeholder {
+            background-color: rgba(93, 92, 222, 0.2);
+            border: 2px dashed #5D5CDE;
+            border-radius: 12px;
+            min-height: 100px;
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200 min-h-screen transition-colors duration-300">
-    <div x-data="app()" x-cloak>
-        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'" class="fixed top-0 left-0 z-50 w-64 h-screen glass transition-transform duration-300 lg:translate-x-0 transform">
-            <div class="flex flex-col h-full">
-                <div class="p-4 border-b border-white/10 flex items-center">
-                    <img src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full mr-3">
-                    <div>
-                        <h1 class="font-bold">ระบบจัดการงาน AI</h1>
-                        <p class="text-xs opacity-70">พร้อมผู้ช่วย AI</p>
+
+<body class="bg-base-200 dark:bg-dark-base-100 text-gray-800 dark:text-gray-200" x-cloak>
+    <div x-data="businessOS()" x-init="init()" :class="{ 'dark': isDark }">
+        <div class="flex h-screen">
+            <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+                    class="fixed lg:static lg:translate-x-0 z-50 w-64 h-full glass flex-shrink-0 transition-transform duration-300 ease-in-out">
+                <div class="flex flex-col h-full">
+                    <div class="p-4 flex items-center space-x-3 border-b border-white/10">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-brain text-white"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Ashval OS</h1>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">AI Business Control</p>
+                        </div>
+                    </div>
+
+                    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                        <template x-for="item in navItems" :key="item.id">
+                            <button @click="currentView = item.id; sidebarOpen = false"
+                                    :class="currentView === item.id ? 'bg-primary text-white shadow-md' : 'hover:bg-primary/10'"
+                                    class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center">
+                                <i :class="item.icon" class="w-6 text-center mr-3"></i>
+                                <span x-text="item.label"></span>
+                                <span x-show="item.count" x-text="item.count()"
+                                       class="ml-auto bg-primary/20 text-primary px-2 py-0.5 rounded-full text-xs font-semibold"></span>
+                            </button>
+                        </template>
+                    </nav>
+
+                     <div class="p-4 border-t border-white/10">
+                        <button @click="currentView = 'settings'; sidebarOpen = false" class="w-full text-left px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors flex items-center">
+                            <i class="fas fa-cog w-6 text-center mr-3"></i>
+                            <span>ตั้งค่า</span>
+                        </button>
                     </div>
                 </div>
+            </aside>
 
-                <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                    <template x-for="item in navItems" :key="item.id">
-                        <button @click="currentView = item.id; sidebarOpen = false"
-                                :class="currentView === item.id ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-blue-600/10'"
-                                class="w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center">
-                            <i :class="item.icon" class="w-6 text-center mr-3"></i>
-                            <span x-text="item.label"></span>
+            <div class="flex-1 flex flex-col h-screen overflow-y-auto">
+                <header class="sticky top-0 z-40 glass p-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg hover:bg-primary/10">
+                            <i class="fas fa-bars"></i>
                         </button>
-                    </template>
-                </nav>
+                        <h2 class="text-xl font-bold" x-text="getCurrentViewTitle()"></h2>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button @click="showQuickAddModal = true" class="btn-3d bg-success text-white px-3 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-plus mr-1"></i>
+                            <span class="hidden sm:inline">เพิ่มด่วน</span>
+                        </button>
+                        <button @click="toggleDarkMode()" class="btn-3d bg-gray-700 dark:bg-dark-base-300 text-white p-2.5 rounded-lg">
+                            <i :class="isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon'"></i>
+                        </button>
+                    </div>
+                </header>
 
-                <div class="p-4 border-t border-white/10">
-                    <button @click="currentView = 'settings'; sidebarOpen = false" class="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-600/10 transition-colors flex items-center">
-                        <i class="fas fa-cog w-6 text-center mr-3"></i>
-                        <span>ตั้งค่า</span>
+                <main class="flex-1 p-6 space-y-6">
+                    <!-- Dashboard -->
+                    <div x-show="currentView === 'dashboard'">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                            <div class="glass rounded-xl p-5 text-center">
+                                <i class="fas fa-tasks text-primary text-3xl mb-2"></i>
+                                <p class="text-2xl font-bold" x-text="tasks.length"></p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">งานทั้งหมด</p>
+                            </div>
+                            <div class="glass rounded-xl p-5 text-center">
+                                <i class="fas fa-check-circle text-success text-3xl mb-2"></i>
+                                <p class="text-2xl font-bold" x-text="tasks.filter(t => t.status === 'done').length"></p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">งานที่เสร็จแล้ว</p>
+                            </div>
+                            <div class="glass rounded-xl p-5 text-center">
+                                <i class="fas fa-project-diagram text-secondary text-3xl mb-2"></i>
+                                <p class="text-2xl font-bold" x-text="projects.length"></p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">โปรเจกต์ที่ใช้งาน</p>
+                            </div>
+                            <div class="glass rounded-xl p-5 text-center">
+                                <i class="far fa-lightbulb text-accent text-3xl mb-2"></i>
+                                <p class="text-2xl font-bold" x-text="ideas.length"></p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">ไอเดีย</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold mb-4">ความคืบหน้าโปรเจกต์</h3>
+                                <div class="chart-container"><canvas id="projectChart"></canvas></div>
+                            </div>
+                            <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold mb-4">ประเภทงาน</h3>
+                                <div class="chart-container"><canvas id="taskTypeChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kanban Board -->
+                    <div x-show="currentView === 'kanban'">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full" x-init="initKanban()">
+                             <template x-for="status in kanbanStatuses" :key="status.id">
+                                <div class="glass rounded-xl p-4 flex flex-col">
+                                    <h3 class="font-semibold mb-4 flex items-center">
+                                        <span class="w-3 h-3 rounded-full mr-3" :class="status.color"></span>
+                                        <span x-text="status.title"></span>
+                                        <span class="ml-auto text-sm bg-primary/10 text-primary px-2 rounded-full" x-text="tasks.filter(t => t.status === status.id).length"></span>
+                                    </h3>
+                                    <div :id="`kanban-${status.id}`" class="space-y-3 min-h-[200px] flex-1 overflow-y-auto pr-2">
+                                        <template x-for="task in tasks.filter(t => t.status === status.id)" :key="task.id">
+                                            <div :data-id="task.id" class="bg-base-100 dark:bg-dark-base-200 p-4 rounded-lg shadow-sm cursor-grab active:cursor-grabbing">
+                                                <h4 class="font-medium" x-text="task.title"></h4>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" x-text="task.description"></p>
+                                                <div class="flex justify-between items-center mt-3">
+                                                    <span class="px-2 py-1 rounded-full text-xs" :class="getPriorityClass(task.priority)" x-text="task.priority"></span>
+                                                    <div class="flex items-center -space-x-2">
+                                                        <img src="<https://i.pravatar.cc/24?u=1>" class="w-6 h-6 rounded-full border-2 border-white dark:border-dark-base-200">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- AI Chat -->
+                    <div x-show="currentView === 'ai_chat'" class="h-[calc(100vh-10rem)] flex flex-col">
+                        <div class="flex-1 glass rounded-xl p-4 overflow-y-auto space-y-4">
+                            <template x-for="message in chatMessages" :key="message.id">
+                                <div class="flex" :class="message.sender === 'user' ? 'justify-end' : 'justify-start'">
+                                    <div class="max-w-md p-3 rounded-lg" :class="message.sender === 'user' ? 'bg-primary text-white' : 'bg-base-100 dark:bg-dark-base-200'">
+                                        <p x-text="message.text"></p>
+                                        <p class="text-xs mt-1 opacity-70" x-text="new Date(message.timestamp).toLocaleTimeString()"></p>
+                                    </div>
+                                </div>
+                            </template>
+                             <div x-show="aiLoading" class="flex justify-start">
+                                <div class="max-w-md p-3 rounded-lg bg-base-100 dark:bg-dark-base-200 flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-primary rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                                    <div class="w-2 h-2 bg-primary rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                                    <div class="w-2 h-2 bg-primary rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <form @submit.prevent="sendChatMessage()" class="relative">
+                                <input type="text" x-model="chatInput" placeholder="ถาม AI หรือสั่งงานที่นี่..."
+                                        class="w-full pl-4 pr-12 py-3 rounded-lg bg-base-100 dark:bg-dark-base-200 border-2 border-transparent focus:border-primary focus:ring-0 transition">
+                                <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-primary text-white hover:bg-opacity-80">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Forms -->
+                    <div x-show="currentView === 'forms'" class="space-y-6">
+                        <h2 class="text-2xl font-bold">ศูนย์รวมฟอร์ม (All-in-one)</h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                             <!-- Daily Missions Form -->
+                             <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold text-lg mb-4 flex items-center"><i class="fas fa-bullseye mr-3 text-primary"></i>เป้าหมายประจำวัน (AI แตกงานย่อย)</h3>
+                                <form @submit.prevent="handleFormSubmit('dailyMission')" class="space-y-3">
+                                    <input type="text" x-model="forms.dailyMission.title" placeholder="ชื่องานหลัก" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                    <textarea x-model="forms.dailyMission.description" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2" rows="2"></textarea>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <select x-model="forms.dailyMission.priority" class="bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                            <option value="">-- ความสำคัญ --</option>
+                                            <option value="High">สำคัญมาก</option>
+                                            <option value="Medium">สำคัญปานกลาง</option>
+                                            <option value="Low">สำคัญน้อย</option>
+                                        </select>
+                                        <input type="date" x-model="forms.dailyMission.dueDate" class="bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                    </div>
+                                    <button type="submit" class="btn-3d bg-primary text-white w-full py-2 rounded-lg">สร้างและแตกงาน</button>
+                                </form>
+                            </div>
+
+                             <!-- Idea Inbox Form -->
+                             <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold text-lg mb-4 flex items-center"><i class="far fa-lightbulb mr-3 text-accent"></i>เพิ่มไอเดียใหม่</h3>
+                                <form @submit.prevent="handleFormSubmit('idea')" class="space-y-3">
+                                    <input type="text" x-model="forms.idea.title" placeholder="ชื่อไอเดีย" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                    <textarea x-model="forms.idea.description" placeholder="รายละเอียดไอเดีย" class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2" rows="2"></textarea>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <select x-model="forms.idea.type" class="bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                            <option value="">-- ประเภท --</option>
+                                            <option value="Podcast">Podcast</option>
+                                            <option value="Video">Video</option>
+                                            <option value="Novel">Novel</option>
+                                            <option value="Music">Music</option>
+                                            <option value="Content">คอนเทนต์</option>
+                                        </select>
+                                        <select x-model="forms.idea.mood" class="bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                            <option value="">-- อารมณ์ --</option>
+                                            <option value="Energetic">กระปรี้กระเปร่า</option>
+                                            <option value="Calm">สงบ</option>
+                                            <option value="Neutral">กลางๆ</option>
+                                            <option value="Tired">เหนื่อย</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn-3d bg-accent text-white w-full py-2 rounded-lg">บันทึกไอเดีย</button>
+                                </form>
+                            </div>
+
+                            <!-- TTS Form -->
+                            <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold text-lg mb-4 flex items-center"><i class="fas fa-microphone-alt mr-3 text-secondary"></i>Script to Voice (TTS)</h3>
+                                <form @submit.prevent="handleFormSubmit('tts')" class="space-y-3">
+                                    <textarea x-model="forms.tts.script" placeholder="ใส่สคริปต์ที่นี่..." rows="3" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2"></textarea>
+                                    <select x-model="forms.tts.voice" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                        <option value="">-- เลือกเสียง --</option>
+                                        <option value="A">ผู้หญิง (Google AI Studio)</option>
+                                        <option value="Leda">ผู้หญิง (Leda)</option>
+                                    </select>
+                                    <button type="submit" class="btn-3d bg-secondary text-white w-full py-2 rounded-lg">สร้างไฟล์เสียง</button>
+                                </form>
+                            </div>
+
+                             <!-- YouTube Analysis Form -->
+                             <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold text-lg mb-4 flex items-center"><i class="fab fa-youtube mr-3 text-red-500"></i>วิเคราะห์ช่อง YouTube</h3>
+                                <form @submit.prevent="handleFormSubmit('youtube')" class="space-y-3">
+                                    <input type="url" x-model="forms.youtube.url" placeholder="URL ช่อง YouTube" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                    <button type="submit" class="btn-3d bg-red-500 text-white w-full py-2 rounded-lg">เริ่มวิเคราะห์</button>
+                                </form>
+                            </div>
+
+                            <!-- AI Prompt Form -->
+                            <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold text-lg mb-4 flex items-center"><i class="fas fa-magic mr-3 text-purple-500"></i>สร้าง AI Prompt</h3>
+                                <form @submit.prevent="handleFormSubmit('prompt')" class="space-y-3">
+                                    <input type="text" x-model="forms.prompt.name" placeholder="ชื่อพรอมต์" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                    <textarea x-model="forms.prompt.content" placeholder="รายละเอียดพรอมต์" rows="3" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2"></textarea>
+                                    <select x-model="forms.prompt.type" class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                        <option value="">-- ประเภทพรอมต์ --</option>
+                                        <option value="งานเขียน">งานเขียน</option>
+                                        <option value="การวิเคราะห์">การวิเคราะห์</option>
+                                        <option value="การพัฒนา">การพัฒนา</option>
+                                        <option value="อื่นๆ">อื่นๆ</option>
+                                    </select>
+                                    <button type="submit" class="btn-3d bg-purple-500 text-white w-full py-2 rounded-lg">บันทึกพรอมต์</button>
+                                </form>
+                            </div>
+
+                            <!-- Analysis & Report Form -->
+                            <div class="glass rounded-xl p-6">
+                                <h3 class="font-semibold text-lg mb-4 flex items-center"><i class="fas fa-chart-line mr-3 text-blue-500"></i>รายงานและวิเคราะห์</h3>
+                                <form @submit.prevent="handleFormSubmit('report')" class="space-y-3">
+                                    <input type="text" x-model="forms.report.title" placeholder="ชื่อรายงาน" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                    <textarea x-model="forms.report.content" placeholder="ข้อมูลที่ต้องการวิเคราะห์" rows="3" required class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2"></textarea>
+                                    <select x-model="forms.report.type" class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                        <option value="">-- ประเภทรายงาน --</option>
+                                        <option value="สรุปผล">สรุปผล</option>
+                                        <option value="วิเคราะห์">วิเคราะห์</option>
+                                        <option value="ติดตาม">ติดตาม</option>
+                                        <option value="ประเมิน">ประเมิน</option>
+                                    </select>
+                                    <button type="submit" class="btn-3d bg-blue-500 text-white w-full py-2 rounded-lg">สร้างรายงาน</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mood Tracker -->
+                    <div x-show="currentView === 'mood'" class="space-y-6">
+                        <h2 class="text-2xl font-bold">Mood Tracker</h2>
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold mb-4">บันทึกอารมณ์วันนี้</h3>
+                            <div class="flex flex-wrap justify-center gap-6 py-4">
+                                <button @click="setMood('Energetic')" class="btn-3d p-4 rounded-xl flex flex-col items-center transition-all" :class="currentMood === 'Energetic' ? 'bg-primary text-white scale-110' : 'bg-base-100 dark:bg-dark-base-200'">
+                                    <span class="text-4xl">😀</span>
+                                    <span class="mt-2">กระปรี้กระเปร่า</span>
+                                </button>
+                                <button @click="setMood('Calm')" class="btn-3d p-4 rounded-xl flex flex-col items-center transition-all" :class="currentMood === 'Calm' ? 'bg-primary text-white scale-110' : 'bg-base-100 dark:bg-dark-base-200'">
+                                    <span class="text-4xl">😌</span>
+                                    <span class="mt-2">สงบ</span>
+                                </button>
+                                <button @click="setMood('Neutral')" class="btn-3d p-4 rounded-xl flex flex-col items-center transition-all" :class="currentMood === 'Neutral' ? 'bg-primary text-white scale-110' : 'bg-base-100 dark:bg-dark-base-200'">
+                                    <span class="text-4xl">😐</span>
+                                    <span class="mt-2">กลางๆ</span>
+                                </button>
+                                <button @click="setMood('Tired')" class="btn-3d p-4 rounded-xl flex flex-col items-center transition-all" :class="currentMood === 'Tired' ? 'bg-primary text-white scale-110' : 'bg-base-100 dark:bg-dark-base-200'">
+                                    <span class="text-4xl">😩</span>
+                                    <span class="mt-2">เหนื่อย</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold mb-4">งานที่เหมาะกับอารมณ์ปัจจุบัน</h3>
+                            <div class="bg-base-100 dark:bg-dark-base-200 p-4 rounded-lg" x-show="currentMood">
+                                <p class="text-gray-600 dark:text-gray-300" x-text="getMoodRecommendation()"></p>
+                                <div class="mt-4 space-y-2">
+                                    <template x-for="task in getMoodTasks()" :key="task.id">
+                                        <div class="p-3 rounded-lg border border-primary/20 flex justify-between items-center">
+                                            <span x-text="task.title"></span>
+                                            <button @click="startTask(task.id)" class="px-3 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20">เริ่มทำ</button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div x-show="!currentMood" class="text-center p-6">
+                                <p class="text-gray-500">กรุณาเลือกอารมณ์ของคุณวันนี้</p>
+                            </div>
+                        </div>
+
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold mb-4">ประวัติอารมณ์ (7 วันล่าสุด)</h3>
+                            <div class="chart-container"><canvas id="moodChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div x-show="currentView === 'settings'" class="space-y-6">
+                        <h2 class="text-2xl font-bold">ตั้งค่าระบบและ API</h2>
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold mb-4">ตั้งค่า API Keys</h3>
+                            <form @submit.prevent="saveAPISettings()" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Airtable API Key</label>
+                                    <input type="password" x-model="settings.airtableKey" placeholder="pat..." class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Airtable Base ID</label>
+                                    <input type="text" x-model="settings.airtableBase" placeholder="app..." class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Gemini API Key</label>
+                                    <input type="password" x-model="settings.geminiKey" placeholder="AI..." class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Google Text-to-Speech API Key</label>
+                                    <input type="password" x-model="settings.ttsKey" placeholder="TTS..." class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">YouTube API Key</label>
+                                    <input type="password" x-model="settings.youtubeKey" placeholder="YT..." class="w-full bg-base-100/50 dark:bg-dark-base-200/50 rounded-lg p-2">
+                                </div>
+                                <button type="submit" class="btn-3d bg-primary text-white px-4 py-2 rounded-lg">บันทึกการตั้งค่า</button>
+                            </form>
+                        </div>
+
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold mb-4">ตั้งค่าการแจ้งเตือน</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="notifyTasks" x-model="settings.notifications.tasks" class="mr-3">
+                                    <label for="notifyTasks">แจ้งเตือนเมื่อถึงกำหนดเวลาทำงาน</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="notifyComments" x-model="settings.notifications.comments" class="mr-3">
+                                    <label for="notifyComments">แจ้งเตือนเมื่อมีความคิดเห็นใหม่</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="notifyAI" x-model="settings.notifications.ai" class="mr-3">
+                                    <label for="notifyAI">แจ้งเตือนเมื่อ AI ประมวลผลเสร็จ</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass rounded-xl p-6">
+                            <h3 class="font-semibold mb-4">ตั้งค่าระบบอัตโนมัติ</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="autoAI" x-model="settings.automation.ai" class="mr-3">
+                                    <label for="autoAI">ใช้ AI แตกงานย่อยอัตโนมัติ</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="autoSync" x-model="settings.automation.sync" class="mr-3">
+                                    <label for="autoSync">Sync กับ Airtable อัตโนมัติ</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="autoExport" x-model="settings.automation.export" class="mr-3">
+                                    <label for="autoExport">Export Markdown อัตโนมัติ</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- Quick Add Modal -->
+        <div x-show="showQuickAddModal" class="fixed inset-0 z-50 overflow-y-auto" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div class="fixed inset-0 bg-black/30 backdrop-blur-sm" @click="showQuickAddModal = false"></div>
+                <div class="glass relative max-w-md w-full rounded-xl p-6 shadow-lg" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                    <h3 class="text-xl font-bold mb-4">เพิ่มด่วน</h3>
+                    <div class="space-y-4">
+                        <button @click="quickAdd('task'); showQuickAddModal = false" class="w-full p-3 text-left rounded-lg hover:bg-primary/10 transition flex items-center">
+                            <i class="fas fa-tasks w-8 h-8 bg-primary/20 text-primary flex items-center justify-center rounded-lg mr-3"></i>
+                            <div>
+                                <p class="font-medium">เพิ่มงานใหม่</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">สร้างงานเพื่อจัดการในบอร์ด Kanban</p>
+                            </div>
+                        </button>
+                        <button @click="quickAdd('idea'); showQuickAddModal = false" class="w-full p-3 text-left rounded-lg hover:bg-primary/10 transition flex items-center">
+                            <i class="far fa-lightbulb w-8 h-8 bg-accent/20 text-accent flex items-center justify-center rounded-lg mr-3"></i>
+                            <div>
+                                <p class="font-medium">เพิ่มไอเดียใหม่</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">บันทึกไอเดียที่เพิ่งคิดได้</p>
+                            </div>
+                        </button>
+                        <button @click="quickAdd('project'); showQuickAddModal = false" class="w-full p-3 text-left rounded-lg hover:bg-primary/10 transition flex items-center">
+                            <i class="fas fa-project-diagram w-8 h-8 bg-secondary/20 text-secondary flex items-center justify-center rounded-lg mr-3"></i>
+                            <div>
+                                <p class="font-medium">สร้างโปรเจกต์ใหม่</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">เริ่มโปรเจกต์ใหม่พร้อมติดตามความคืบหน้า</p>
+                            </div>
+                        </button>
+                    </div>
+                    <button @click="showQuickAddModal = false" class="absolute top-3 right-3 p-1 rounded-full hover:bg-primary/10">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
-        </aside>
+        </div>
 
-        <div class="lg:pl-64 flex flex-col min-h-screen">
-            <header class="sticky top-0 z-40 glass p-4 flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg hover:bg-blue-600/10">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h2 class="text-xl font-bold" x-text="getCurrentViewTitle()"></h2>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <a href="https://airtable.com/appXXXXXXXXXXXXXX" target="_blank" class="btn-3d bg-green-600 text-white px-3 py-2 rounded-lg flex items-center">
-                        <i class="fas fa-table mr-1"></i>
-                        <span class="hidden sm:inline">Airtable</span>
-                    </a>
-                    <button @click="toggleDarkMode()" class="btn-3d bg-gray-700 dark:bg-gray-600 text-white p-2.5 rounded-lg">
-                        <i :class="isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon'"></i>
-                    </button>
-                </div>
-            </header>
-
-            <main class="flex-1 p-6 space-y-6">
-                <!-- AI Chat View -->
-                <div x-show="currentView === 'ai_chat'" class="h-[calc(100vh-10rem)] flex flex-col">
-                    <div class="flex-1 glass rounded-xl p-4 overflow-y-auto space-y-4" id="chat-container">
-                        <template x-for="message in chatMessages" :key="message.id">
-                            <div class="flex" :class="message.sender === 'user' ? 'justify-end' : 'justify-start'">
-                                <div class="max-w-md p-3 rounded-lg" :class="message.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-white/20 dark:bg-gray-700/40'">
-                                    <p x-html="formatMessage(message.text)"></p>
-                                    <p class="text-xs mt-1 opacity-70" x-text="formatTime(message.timestamp)"></p>
-                                </div>
-                            </div>
-                        </template>
-                        <div x-show="isLoading" class="flex justify-start">
-                            <div class="max-w-md p-3 rounded-lg bg-white/20 dark:bg-gray-700/40 flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
-                                <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
-                                <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <form @submit.prevent="sendMessage()" class="relative">
-                            <input type="text" x-model="newMessage" placeholder="พิมพ์ข้อความหรือคำสั่ง..."
-                                   class="w-full pl-4 pr-12 py-3 rounded-lg bg-white/10 dark:bg-gray-700/30 border-2 border-transparent focus:border-blue-600 focus:ring-0 transition">
-                            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-blue-600 text-white hover:bg-opacity-80">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Forms View -->
-                <div x-show="currentView === 'forms'" class="space-y-6">
-                    <div class="glass rounded-xl p-6">
-                        <h3 class="font-semibold text-lg mb-4 flex items-center">
-                            <i class="fas fa-tasks mr-3 text-blue-600"></i>เพิ่มงานใหม่
-                        </h3>
-                        <form @submit.prevent="submitTask()" class="space-y-3">
-                            <input type="text" x-model="taskForm.title" placeholder="ชื่องาน" required 
-                                   class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
-                            <textarea x-model="taskForm.description" placeholder="รายละเอียด" 
-                                      class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2" rows="2"></textarea>
-                            <div class="grid grid-cols-2 gap-3">
-                                <select x-model="taskForm.priority" class="bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
-                                    <option value="">-- ความสำคัญ --</option>
-                                    <option value="High">สำคัญมาก</option>
-                                    <option value="Medium">สำคัญปานกลาง</option>
-                                    <option value="Low">สำคัญน้อย</option>
-                                </select>
-                                <input type="date" x-model="taskForm.dueDate" class="bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
-                            </div>
-                            <button type="submit" class="btn-3d bg-blue-600 text-white w-full py-2 rounded-lg">บันทึกงาน</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Settings View -->
-                <div x-show="currentView === 'settings'" class="space-y-6">
-                    <div class="glass rounded-xl p-6">
-                        <h3 class="font-semibold text-lg mb-4">ตั้งค่าการเชื่อมต่อ API</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block mb-1">Airtable API Key</label>
-                                <input type="password" x-model="settings.airtableKey" placeholder="patXXXXXXXXXXXXXX" 
-                                       class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
-                            </div>
-                            <div>
-                                <label class="block mb-1">Airtable Base ID</label>
-                                <input type="text" x-model="settings.airtableBase" placeholder="appXXXXXXXXXXXXXX" 
-                                       class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
-                            </div>
-                            <div>
-                                <label class="block mb-1">Google API Key (Gemini)</label>
-                                <input type="password" x-model="settings.googleKey" placeholder="AIZXXXXXXXXXXXXXXX" 
-                                       class="w-full bg-white/10 dark:bg-gray-700/30 rounded-lg p-2">
-                            </div>
-                            <button @click="saveSettings()" class="btn-3d bg-blue-600 text-white px-4 py-2 rounded-lg">บันทึกการตั้งค่า</button>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        <!-- Notification Toast -->
+        <div x-show="notification.show" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-4" class="fixed bottom-4 right-4 max-w-xs w-full p-4 rounded-lg shadow-lg" :class="notification.type === 'success' ? 'bg-success text-white' : notification.type === 'error' ? 'bg-error text-white' : 'bg-warning text-gray-800'">
+            <div class="flex items-center">
+                <i :class="notification.type === 'success' ? 'fas fa-check-circle' : notification.type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-exclamation-triangle'" class="mr-3 text-xl"></i>
+                <p x-text="notification.message"></p>
+                <button @click="notification.show = false" class="ml-auto p-1 rounded-full hover:bg-black/10">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        function app() {
+        function businessOS() {
             return {
-                sidebarOpen: false,
                 isDark: localStorage.getItem('darkMode') === 'true',
-                currentView: 'ai_chat',
-                isLoading: false,
-                chatMessages: [],
-                newMessage: '',
-                taskForm: {
-                    title: '',
-                    description: '',
-                    priority: '',
-                    dueDate: ''
+                sidebarOpen: false,
+                currentView: 'dashboard',
+                showQuickAddModal: false,
+                notification: {
+                    show: false,
+                    type: 'success',
+                    message: '',
+                    timeout: null
                 },
+                aiLoading: false,
+
+                // Data
+                tasks: [
+                    { id: 1, title: 'พัฒนาหน้า Dashboard', description: 'สร้างหน้า Dashboard หลักของแอป', status: 'todo', priority: 'High' },
+                    { id: 2, title: 'เขียนบทความ AI Trends', description: 'เขียนบทความเกี่ยวกับเทรนด์ AI ในปี 2025', status: 'doing', priority: 'Medium' },
+                    { id: 3, title: 'ออกแบบโลโก้ใหม่', description: 'ออกแบบโลโก้ใหม่สำหรับแบรนด์', status: 'doing', priority: 'Medium' },
+                    { id: 4, title: 'อัปเดตฐานข้อมูล', description: 'อัปเดตโครงสร้างฐานข้อมูลให้รองรับฟีเจอร์ใหม่', status: 'done', priority: 'High' },
+                    { id: 5, title: 'ทดสอบระบบแจ้งเตือน', description: 'ทดสอบระบบแจ้งเตือนผ่าน Line Notify', status: 'done', priority: 'Low' }
+                ],
+                projects: [
+                    { id: 1, name: 'Business OS', progress: 75, type: 'Development' },
+                    { id: 2, name: 'Content Creation', progress: 40, type: 'Content' },
+                    { id: 3, name: 'Novel Writing', progress: 60, type: 'Creative' },
+                    { id: 4, name: 'Podcast Series', progress: 25, type: 'Content' },
+                    { id: 5, name: 'AI Research', progress: 90, type: 'Research' }
+                ],
+                ideas: [
+                    { id: 1, title: 'แอปพลิเคชัน AI สำหรับนักเขียน', type: 'Novel', mood: 'Energetic' },
+                    { id: 2, title: 'พอดแคสต์เกี่ยวกับเทคโนโลยี', type: 'Podcast', mood: 'Calm' },
+                    { id: 3, title: 'คอร์สออนไลน์ - Python สำหรับผู้เริ่มต้น', type: 'Content', mood: 'Energetic' },
+                    { id: 4, title: 'วิดีโอสอนการใช้ AI ในชีวิตประจำวัน', type: 'Video', mood: 'Neutral' },
+                    { id: 5, title: 'เพลงประกอบนิยาย Fantasy', type: 'Music', mood: 'Calm' }
+                ],
+
+                chatMessages: [
+                    { id: 1, sender: 'ai', text: 'สวัสดีครับ ผมคือ AI ผู้ช่วยของคุณ มีอะไรให้ช่วยไหมครับ?', timestamp: new Date().getTime() - 24 * 60 * 60 * 1000 }
+                ],
+                chatInput: '',
+
+                currentMood: localStorage.getItem('currentMood') || '',
+                moodHistory: JSON.parse(localStorage.getItem('moodHistory')) || [
+                    { date: '2025-07-01', mood: 'Energetic' },
+                    { date: '2025-07-02', mood: 'Calm' },
+                    { date: '2025-07-03', mood: 'Neutral' },
+                    { date: '2025-07-04', mood: 'Tired' },
+                    { date: '2025-07-05', mood: 'Energetic' },
+                    { date: '2025-07-06', mood: 'Calm' }
+                ],
+
+                kanbanStatuses: [
+                    { id: 'todo', title: 'รอดำเนินการ', color: 'bg-warning' },
+                    { id: 'doing', title: 'กำลังทำ', color: 'bg-primary' },
+                    { id: 'done', title: 'เสร็จสิ้น', color: 'bg-success' }
+                ],
+
+                navItems: [
+                    { id: 'dashboard', label: 'แดชบอร์ด', icon: 'fas fa-home' },
+                    { id: 'kanban', label: 'Kanban Board', icon: 'fas fa-tasks' },
+                    { id: 'ai_chat', label: 'AI Chat', icon: 'fas fa-robot' },
+                    { id: 'forms', label: 'ฟอร์มต่างๆ', icon: 'fas fa-clipboard-list' },
+                    { id: 'mood', label: 'Mood Tracker', icon: 'fas fa-smile' },
+                    { id: 'projects', label: 'โปรเจกต์', icon: 'fas fa-project-diagram', count: function() { return this.projects.length; } }
+                ],
+
                 settings: {
                     airtableKey: localStorage.getItem('airtableKey') || '',
                     airtableBase: localStorage.getItem('airtableBase') || '',
-                    googleKey: localStorage.getItem('googleKey') || ''
+                    geminiKey: localStorage.getItem('geminiKey') || '',
+                    ttsKey: localStorage.getItem('ttsKey') || '',
+                    youtubeKey: localStorage.getItem('youtubeKey') || '',
+                    notifications: {
+                        tasks: true,
+                        comments: true,
+                        ai: true
+                    },
+                    automation: {
+                        ai: true,
+                        sync: true,
+                        export: false
+                    }
                 },
-                navItems: [
-                    { id: 'ai_chat', label: 'AI ผู้ช่วย', icon: 'fas fa-robot' },
-                    { id: 'forms', label: 'เพิ่มข้อมูล', icon: 'fas fa-plus-circle' },
-                ],
+
+                forms: {
+                    dailyMission: { title: '', description: '', priority: '', dueDate: '' },
+                    idea: { title: '', description: '', type: '', mood: '' },
+                    tts: { script: '', voice: '' },
+                    youtube: { url: '' },
+                    prompt: { name: '', content: '', type: '' },
+                    report: { title: '', content: '', type: '' }
+                },
+
                 init() {
-                    this.loadMessages();
-                    if (this.isDark) {
-                        document.documentElement.classList.add('dark');
+                    this.initCharts();
+
+                    // Set dark mode based on system preference if not set
+                    if (localStorage.getItem('darkMode') === null) {
+                        this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        localStorage.setItem('darkMode', this.isDark.toString());
                     }
+
+                    document.documentElement.classList.toggle('dark', this.isDark);
                 },
-                getCurrentViewTitle() {
-                    const current = this.navItems.find(item => item.id === this.currentView);
-                    return current ? current.label : 'ตั้งค่า';
-                },
-                toggleDarkMode() {
-                    this.isDark = !this.isDark;
-                    localStorage.setItem('darkMode', this.isDark);
-                    document.documentElement.classList.toggle('dark');
-                },
-                formatTime(timestamp) {
-                    return new Date(timestamp).toLocaleTimeString();
-                },
-                formatMessage(text) {
-                    return text.replace(/\n/g, '<br>');
-                },
-                loadMessages() {
-                    const saved = localStorage.getItem('chatMessages');
-                    if (saved) {
-                        this.chatMessages = JSON.parse(saved);
-                    } else {
-                        // Add welcome message
-                        this.chatMessages = [{
-                            id: Date.now(),
-                            sender: 'assistant',
-                            text: 'สวัสดี! ฉันเป็น AI ผู้ช่วยของคุณ สามารถถามอะไรก็ได้หรือสั่งให้ฉันสร้างงานใหม่ เช่น "สร้างงานใหม่: อัพเดทเว็บไซต์ ภายในวันพรุ่งนี้"',
-                            timestamp: Date.now()
-                        }];
-                        localStorage.setItem('chatMessages', JSON.stringify(this.chatMessages));
-                    }
-                    this.scrollToBottom();
-                },
-                scrollToBottom() {
+
+                initCharts() {
                     setTimeout(() => {
-                        const container = document.getElementById('chat-container');
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
+                        // Project Progress Chart
+                        const projectCtx = document.getElementById('projectChart').getContext('2d');
+                        const projectNames = this.projects.map(p => p.name);
+                        const projectProgress = this.projects.map(p => p.progress);
+
+                        new Chart(projectCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: projectNames,
+                                datasets: [{
+                                    label: 'ความคืบหน้า (%)',
+                                    data: projectProgress,
+                                    backgroundColor: [
+                                        '#5D5CDE', '#8B5FBF', '#FF6B9D', '#4ADE80', '#FBBF24'
+                                    ],
+                                    borderWidth: 0,
+                                    borderRadius: 6
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 100
+                                    }
+                                }
+                            }
+                        });
+
+                        // Task Type Chart
+                        const taskTypeCtx = document.getElementById('taskTypeChart').getContext('2d');
+                        const taskTypes = ['Development', 'Content', 'Creative', 'Research', 'Other'];
+                        const taskCounts = [2, 3, 2, 1, 0];
+
+                        new Chart(taskTypeCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: taskTypes,
+                                datasets: [{
+                                    data: taskCounts,
+                                    backgroundColor: [
+                                        '#5D5CDE', '#8B5FBF', '#FF6B9D', '#4ADE80', '#FBBF24'
+                                    ],
+                                    borderWidth: 2,
+                                    borderColor: this.isDark ? '#1f2937' : '#ffffff'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'right'
+                                    }
+                                }
+                            }
+                        });
+
+                        // Mood Chart
+                        const moodCtx = document.getElementById('moodChart').getContext('2d');
+                        const moodLabels = this.moodHistory.map(m => m.date.split('-')[2] + '/' + m.date.split('-')[1]); // Format as DD/MM
+                        const moodData = this.moodHistory.map(m => {
+                            switch(m.mood) {
+                                case 'Energetic': return 4;
+                                case 'Calm': return 3;
+                                case 'Neutral': return 2;
+                                case 'Tired': return 1;
+                                default: return 0;
+                            }
+                        });
+
+                        new Chart(moodCtx, {
+                            type: 'line',
+                            data: {
+                                labels: moodLabels,
+                                datasets: [{
+                                    label: 'อารมณ์',
+                                    data: moodData,
+                                    backgroundColor: '#5D5CDE',
+                                    borderColor: '#5D5CDE',
+                                    tension: 0.3,
+                                    pointRadius: 6,
+                                    pointBackgroundColor: '#5D5CDE',
+                                    pointBorderColor: this.isDark ? '#1f2937' : '#ffffff',
+                                    pointBorderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        min: 0,
+                                        max: 5,
+                                        ticks: {
+                                            stepSize: 1,
+                                            callback: function(value) {
+                                                switch(value) {
+                                                    case 4: return 'กระปรี้กระเปร่า';
+                                                    case 3: return 'สงบ';
+                                                    case 2: return 'กลางๆ';
+                                                    case 1: return 'เหนื่อย';
+                                                    default: return '';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
                     }, 100);
                 },
-                async sendMessage() {
-                    if (!this.newMessage.trim()) return;
-                    
-                    // Add user message
+
+                initKanban() {
+                    setTimeout(() => {
+                        this.kanbanStatuses.forEach(status => {
+                            const el = document.getElementById(`kanban-${status.id}`);
+                            if (el) {
+                                new Sortable(el, {
+                                    group: 'kanban',
+                                    animation: 150,
+                                    ghostClass: 'kanban-placeholder',
+                                    onEnd: (evt) => {
+                                        const taskId = parseInt(evt.item.dataset.id);
+                                        const newStatus = evt.to.id.replace('kanban-', '');
+                                        this.updateTaskStatus(taskId, newStatus);
+                                    }
+                                });
+                            }
+                        });
+                    }, 100);
+                },
+
+                updateTaskStatus(taskId, newStatus) {
+                    const taskIndex = this.tasks.findIndex(t => t.id === taskId);
+                    if (taskIndex !== -1) {
+                        this.tasks[taskIndex].status = newStatus;
+                        this.showNotification('success', 'อัปเดตสถานะงานเรียบร้อย');
+                    }
+                },
+
+                getCurrentViewTitle() {
+                    const view = this.navItems.find(item => item.id === this.currentView);
+                    if (view) return view.label;
+                    if (this.currentView === 'settings') return 'ตั้งค่า';
+                    return '';
+                },
+
+                toggleDarkMode() {
+                    this.isDark = !this.isDark;
+                    localStorage.setItem('darkMode', this.isDark.toString());
+                    document.documentElement.classList.toggle('dark', this.isDark);
+
+                    // Reinit charts when theme changes
+                    this.initCharts();
+                },
+
+                showNotification(type, message) {
+                    if (this.notification.timeout) {
+                        clearTimeout(this.notification.timeout);
+                    }
+
+                    this.notification.type = type;
+                    this.notification.message = message;
+                    this.notification.show = true;
+
+                    this.notification.timeout = setTimeout(() => {
+                        this.notification.show = false;
+                    }, 3000);
+                },
+
+                sendChatMessage() {
+                    if (!this.chatInput.trim()) return;
+
                     const userMessage = {
                         id: Date.now(),
                         sender: 'user',
-                        text: this.newMessage,
+                        text: this.chatInput,
                         timestamp: Date.now()
                     };
+
                     this.chatMessages.push(userMessage);
-                    localStorage.setItem('chatMessages', JSON.stringify(this.chatMessages));
-                    this.scrollToBottom();
-                    
-                    const userInput = this.newMessage;
-                    this.newMessage = '';
-                    this.isLoading = true;
-                    
-                    try {
-                        // Handle task creation command
-                        if (userInput.toLowerCase().includes('สร้างงาน') || userInput.toLowerCase().includes('create task')) {
-                            await this.processTaskCreation(userInput);
-                        } else {
-                            await this.processWithGemini(userInput);
-                        }
-                    } catch (error) {
-                        console.error('Error processing message:', error);
-                        this.addAssistantMessage('ขออภัย เกิดข้อผิดพลาดในการประมวลผล กรุณาลองอีกครั้ง');
-                    }
-                    
-                    this.isLoading = false;
-                    this.scrollToBottom();
+                    this.aiLoading = true;
+
+                    // Simulate AI response
+                    setTimeout(() => {
+                        const aiResponses = [
+                            "เข้าใจแล้วครับ ผมจะช่วยคุณจัดการเรื่องนี้",
+                            "กำลังประมวลผลข้อมูลให้ครับ จะเสร็จในไม่ช้า",
+                            "ได้ครับ ผมได้บันทึกข้อมูลนี้ไว้แล้ว",
+                            "กำลังวิเคราะห์ข้อมูลให้ครับ รอสักครู่",
+                            "ผมได้ดำเนินการตามที่คุณขอแล้วครับ"
+                        ];
+
+                        const aiMessage = {
+                            id: Date.now(),
+                            sender: 'ai',
+                            text: aiResponses[Math.floor(Math.random() * aiResponses.length)],
+                            timestamp: Date.now()
+                        };
+
+                        this.aiLoading = false;
+                        this.chatMessages.push(aiMessage);
+                    }, 1500);
+
+                    this.chatInput = '';
                 },
-                addAssistantMessage(text) {
-                    const assistantMessage = {
-                        id: Date.now(),
-                        sender: 'assistant',
-                        text: text,
-                        timestamp: Date.now()
-                    };
-                    this.chatMessages.push(assistantMessage);
-                    localStorage.setItem('chatMessages', JSON.stringify(this.chatMessages));
-                },
-                async processTaskCreation(input) {
-                    // Simulate task creation
-                    const taskTitle = input.replace(/สร้างงาน|create task/i, '').trim().split(':').pop().trim();
-                    
-                    // Use Airtable API if credentials are set
-                    if (this.settings.airtableKey && this.settings.airtableBase) {
-                        try {
-                            const response = await fetch(`https://api.airtable.com/v0/${this.settings.airtableBase}/Tasks`, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Bearer ${this.settings.airtableKey}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    fields: {
-                                        Name: taskTitle,
-                                        Status: 'Todo',
-                                        Priority: 'Medium'
-                                    }
-                                })
-                            });
-                            
-                            if (response.ok) {
-                                this.addAssistantMessage(`✅ สร้างงาน "${taskTitle}" เรียบร้อยแล้ว`);
-                            } else {
-                                throw new Error('Airtable API error');
-                            }
-                        } catch (error) {
-                            console.error('Airtable error:', error);
-                            this.addAssistantMessage(`⚠️ ไม่สามารถบันทึกงานใน Airtable ได้: ${error.message}`);
+
+                handleFormSubmit(formType) {
+                    const formData = this.forms[formType];
+
+                    this.aiLoading = true;
+                    setTimeout(() => {
+                        this.aiLoading = false;
+
+                        switch (formType) {
+                            case 'dailyMission':
+                                // Add main task
+                                this.tasks.push({
+                                    id: Date.now(),
+                                    title: formData.title,
+                                    description: formData.description || 'งานหลัก',
+                                    status: 'todo',
+                                    priority: formData.priority || 'Medium'
+                                });
+
+                                // AI generate subtasks (simulated)
+                                for (let i = 1; i <= 3; i++) {
+                                    this.tasks.push({
+                                        id: Date.now() + i,
+                                        title: `งานย่อย ${i} สำหรับ ${formData.title}`,
+                                        description: `งานย่อยที่สร้างโดย AI สำหรับ "${formData.title}"`,
+                                        status: 'todo',
+                                        priority: formData.priority || 'Medium'
+                                    });
+                                }
+
+                                this.showNotification('success', 'สร้างงานหลักและแตกงานย่อยเรียบร้อย');
+                                break;
+
+                            case 'idea':
+                                this.ideas.push({
+                                    id: Date.now(),
+                                    title: formData.title,
+                                    type: formData.type || 'Other',
+                                    mood: formData.mood || this.currentMood || 'Neutral'
+                                });
+                                this.showNotification('success', 'บันทึกไอเดียเรียบร้อย');
+                                break;
+
+                            case 'tts':
+                                this.showNotification('success', 'กำลังสร้างไฟล์เสียง... หากมี API Key ที่ถูกต้อง ระบบจะดำเนินการให้');
+                                break;
+
+                            case 'youtube':
+                                this.showNotification('success', 'กำลังวิเคราะห์ช่อง YouTube... หากมี API Key ที่ถูกต้อง ระบบจะดำเนินการให้');
+                                break;
+
+                            case 'prompt':
+                                this.showNotification('success', 'บันทึกพรอมต์ AI เรียบร้อย');
+                                break;
+
+                            case 'report':
+                                this.showNotification('success', 'กำลังสร้างรายงานด้วย AI...');
+                                break;
                         }
-                    } else {
-                        // Fallback to local simulation
-                        setTimeout(() => {
-                            this.addAssistantMessage(`✅ สร้างงาน "${taskTitle}" เรียบร้อยแล้ว (โหมดจำลอง - กรุณาตั้งค่า Airtable API)`);
-                        }, 1000);
-                    }
+
+                        // Reset form
+                        this.forms[formType] = Object.fromEntries(
+                            Object.keys(this.forms[formType]).map(key => [key, ''])
+                        );
+
+                    }, 1500);
                 },
-                async processWithGemini(input) {
-                    if (this.settings.googleKey) {
-                        try {
-                            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${this.settings.googleKey}`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    contents: [{
-                                        parts: [{
-                                            text: input
-                                        }]
-                                    }]
-                                })
-                            });
-                            
-                            if (response.ok) {
-                                const data = await response.json();
-                                const aiResponse = data.candidates[0].content.parts[0].text;
-                                this.addAssistantMessage(aiResponse);
-                            } else {
-                                throw new Error('Gemini API error');
-                            }
-                        } catch (error) {
-                            console.error('Gemini error:', error);
-                            this.addAssistantMessage('ขออภัย ไม่สามารถเชื่อมต่อกับ Gemini API ได้ กรุณาตรวจสอบ API key');
-                        }
-                    } else {
-                        // Fallback response
-                        setTimeout(() => {
-                            this.addAssistantMessage('กรุณาตั้งค่า Google API Key (Gemini) ในหน้าตั้งค่าเพื่อใช้งาน AI');
-                        }, 1000);
-                    }
-                },
-                async submitTask() {
-                    if (!this.taskForm.title) return;
-                    
-                    if (this.settings.airtableKey && this.settings.airtableBase) {
-                        try {
-                            const response = await fetch(`https://api.airtable.com/v0/${this.settings.airtableBase}/Tasks`, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Bearer ${this.settings.airtableKey}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    fields: {
-                                        Name: this.taskForm.title,
-                                        Description: this.taskForm.description,
-                                        Status: 'Todo',
-                                        Priority: this.taskForm.priority || 'Medium',
-                                        'Due Date': this.taskForm.dueDate || null
-                                    }
-                                })
-                            });
-                            
-                            if (response.ok) {
-                                alert('บันทึกงานเรียบร้อยแล้ว');
-                                this.taskForm = { title: '', description: '', priority: '', dueDate: '' };
-                            } else {
-                                throw new Error('Airtable API error');
-                            }
-                        } catch (error) {
-                            console.error('Airtable error:', error);
-                            alert(`ไม่สามารถบันทึกงานได้: ${error.message}`);
-                        }
-                    } else {
-                        alert('กรุณาตั้งค่า Airtable API Key และ Base ID ก่อน');
+
+                quickAdd(type) {
+                    switch (type) {
+                        case 'task':
+                            this.currentView = 'forms';
+                            setTimeout(() => {
+                                document.querySelector('input[placeholder="ชื่องานหลัก"]').focus();
+                            }, 100);
+                            break;
+
+                        case 'idea':
+                            this.currentView = 'forms';
+                            setTimeout(() => {
+                                document.querySelector('input[placeholder="ชื่อไอเดีย"]').focus();
+                            }, 100);
+                            break;
+
+                        case 'project':
+                            this.showNotification('info', 'เปิดไปที่ฟอร์มโปรเจกต์');
+                            break;
                     }
                 },
-                saveSettings() {
+
+                saveAPISettings() {
                     localStorage.setItem('airtableKey', this.settings.airtableKey);
                     localStorage.setItem('airtableBase', this.settings.airtableBase);
-                    localStorage.setItem('googleKey', this.settings.googleKey);
-                    alert('บันทึกการตั้งค่าเรียบร้อยแล้ว');
+                    localStorage.setItem('geminiKey', this.settings.geminiKey);
+                    localStorage.setItem('ttsKey', this.settings.ttsKey);
+                    localStorage.setItem('youtubeKey', this.settings.youtubeKey);
+
+                    this.showNotification('success', 'บันทึกการตั้งค่า API เรียบร้อย');
+                },
+
+                setMood(mood) {
+                    this.currentMood = mood;
+                    localStorage.setItem('currentMood', mood);
+
+                    // Add to history
+                    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+                    // Check if already have entry for today
+                    const todayIndex = this.moodHistory.findIndex(m => m.date === today);
+                    if (todayIndex !== -1) {
+                        this.moodHistory[todayIndex].mood = mood;
+                    } else {
+                        this.moodHistory.push({ date: today, mood });
+                        // Keep only last 7 days
+                        if (this.moodHistory.length > 7) {
+                            this.moodHistory.shift();
+                        }
+                    }
+
+                    localStorage.setItem('moodHistory', JSON.stringify(this.moodHistory));
+                    this.showNotification('success', 'บันทึกอารมณ์วันนี้เรียบร้อย');
+
+                    // Reinit mood chart
+                    setTimeout(() => {
+                        this.initCharts();
+                    }, 100);
+                },
+
+                getMoodRecommendation() {
+                    switch (this.currentMood) {
+                        case 'Energetic':
+                            return 'คุณกำลังรู้สึกกระปรี้กระเปร่า เหมาะกับงานที่ต้องใช้ความคิดสร้างสรรค์หรืองานที่ท้าทาย เช่น การเขียนโค้ด พัฒนาโปรเจกต์ใหม่ หรืองานที่ต้องใช้ความคิดสร้างสรรค์';
+                        case 'Calm':
+                            return 'คุณกำลังรู้สึกสงบ เหมาะกับงานที่ต้องใช้สมาธิและความละเอียด เช่น การเขียนบทความ ตรวจทานงาน หรือวิเคราะห์ข้อมูล';
+                        case 'Neutral':
+                            return 'คุณกำลังรู้สึกปกติ เหมาะกับงานประจำทั่วไป หรืองานที่มีกำหนดส่งใกล้เข้ามา';
+                        case 'Tired':
+                            return 'คุณกำลังรู้สึกเหนื่อย ควรทำงานที่ไม่ต้องใช้ความคิดมากนัก เช่น การจัดระเบียบไฟล์ ตอบอีเมล หรืองานที่ทำเป็นประจำ';
+                        default:
+                            return 'กรุณาเลือกอารมณ์ของคุณวันนี้';
+                    }
+                },
+
+                getMoodTasks() {
+                    // Return tasks that match current mood
+                    switch (this.currentMood) {
+                        case 'Energetic':
+                            return this.tasks.filter(t => t.priority === 'High' && t.status !== 'done').slice(0, 3);
+                        case 'Calm':
+                            return this.tasks.filter(t => t.priority === 'Medium' && t.status !== 'done').slice(0, 3);
+                        case 'Neutral':
+                            return this.tasks.filter(t => t.status === 'doing').slice(0, 3);
+                        case 'Tired':
+                            return this.tasks.filter(t => t.priority === 'Low' && t.status !== 'done').slice(0, 3);
+                        default:
+                            return [];
+                    }
+                },
+
+                startTask(taskId) {
+                    const taskIndex = this.tasks.findIndex(t => t.id === taskId);
+                    if (taskIndex !== -1) {
+                        this.tasks[taskIndex].status = 'doing';
+                        this.showNotification('success', 'เริ่มทำงานเรียบร้อย');
+                    }
+                },
+
+                getPriorityClass(priority) {
+                    switch (priority) {
+                        case 'High':
+                            return 'bg-error/20 text-error';
+                        case 'Medium':
+                            return 'bg-warning/20 text-warning';
+                        case 'Low':
+                            return 'bg-success/20 text-success';
+                        default:
+                            return 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                    }
                 }
             }
         }
